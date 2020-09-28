@@ -1,0 +1,301 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+```{r message=FALSE}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(class)
+#https://github.com/idc9/stor390/blob/master/notes/cross_validation/knn_functions.R
+
+# read data in
+setwd("C:/Users/ghaflati/Desktop/MSDS/Fall 2020/")
+#CL1
+CAMBRIA =read_csv("fonts/CAMBRIA.csv") %>%
+        select(font,strength,italic,r0c0:r19c19) %>%
+        filter(strength == 0.4, italic == 0) %>%
+        mutate(font = "CAMBRIA")
+
+#CL2
+NIRMALA =read_csv("fonts/NIRMALA.csv") %>%
+          select(font,strength,italic,r0c0:r19c19) %>%
+          filter(strength == 0.4, italic == 0) %>%
+          mutate(font = "NIRMALA")
+
+#CL3
+CONSOLAS =read_csv("fonts/CONSOLAS.csv") %>%
+          select(font,strength,italic,r0c0:r19c19) %>%
+          filter(strength == 0.4, italic == 0) %>%
+          mutate(font = "CONSOLAS")
+
+# sizes of each font class
+n1 = dim(CAMBRIA)[1]
+n2 = dim(NIRMALA)[1]
+n3 = dim(CONSOLAS)[1]
+
+
+# dataset for the union of CL1, CL2, CL3
+df = rbind(CAMBRIA,NIRMALA,CONSOLAS) %>% select(-c(strength,italic)) %>% drop_na() %>% mutate(font = as.numeric(as.factor(font)))
+df$font = as.factor(df$font)
+head(df)
+
+print(paste("There are",n1,"cases for CAMBRIA font" ))
+print(paste("There are",n2,"cases for NIRMALA font" ))
+print(paste("There are",n3,"cases for CONSOLAS font" ))
+
+print(paste("There are",dim(df)[1],"cases for the final dataset" ))
+
+```
+
+Compute the 400x400 correlation matrix CORR of the 400 features X1 ...X400
+Extract the 10 pairs Xi,Xj of features which have the 20 highest absolute values |CORR(i,j)|
+
+```{r}
+SDATA = df %>% mutate_at(.vars = colnames(df)[2:401], .funs = scale)
+head(SDATA)
+```
+
+Compute the 400x400 correlation matrix CORR of the 400 features X1 ...X400
+Extract the 10 pairs Xi,Xj of features which have the 20 highest absolute values |CORR(i,j)|
+```{r}
+mat = abs(cor (SDATA[,-1])) 
+# sorted_mat = sort(mat,decreasing =TRUE) 
+# sorted_mat = sorted_mat[sorted_mat !=1]
+cor_df = as_data_frame(mat,rownames = "Row")  %>%
+          gather(Column,corr,r0c0:r19c19) %>%
+          filter(corr!= 1,Row!= Column) %>% arrange(desc(corr)) %>% filter(!duplicated(corr))
+cor_df[1:10,]
+```
+PART 1
+1.0) Among the n1 rows of class CL1 select arbitrarily a number r1 ≃ 20% n1 of rows which will define a
+set testCL1 of r1 test cases ; the remaining s1= n1-r1 ≃ 80% n1 rows of class CL1 will define a set
+trainCL1 of s1 training cases . Similarly select the two sets of cases testCL2, trainCL2, and the two sets testCL3, trainCL3. Then define the full training set TRAINSETas the union of {trainCL1, trainCL2, trainCL3}, and the full test set TESTSETas the union of {testCL1, testCL2, testCL3}.
+
+```{r}
+library(caTools)
+set.seed(777)
+sample = sample.split(SDATA$font,SplitRatio = 0.8)
+
+print("SDATA proprtions")
+rbind(table(SDATA$font),
+      table(SDATA$font)/dim(SDATA)[1])
+
+
+training_set = subset(SDATA,sample==TRUE)
+test_set = subset(SDATA,sample==FALSE)
+
+cat("\n \n training_set proprtions\n")
+rbind(table(training_set$font),
+      table(training_set$font)/dim(training_set)[1])
+
+cat("\n \n test_set proprtions\n")
+rbind(table(test_set$font),
+      table(test_set$font)/dim(test_set)[1])
+
+```
+1.1) Fix K = 12. Use the standardized data matrix SDATA to apply the K nearest neighbor (KNN) algorithm
+for the automatic classification of arbitrary cases into one of the three classes CL1 CL2 CL3. Compute the two percentages of correct classifications trainperf12 on TRAINSET and testperf12 on TESTSET.Interpret the results
+
+```{r}
+
+accuracy <- function(x){
+  x = as.matrix(x)          
+  sum(diag(x)/(sum(rowSums(x)))) * 100}
+
+
+y_pred_train = knn(train = training_set[,-1],
+              test = training_set[,-1],
+              cl = training_set$font,
+              k=12)
+
+y_pred_test = knn(train = training_set[,-1],
+              test = test_set[,-1],
+              cl = training_set$font,
+              k=12)
+
+# tab = table(y_pred,test_set$font)
+
+cat("\n Training performance \n\n")
+table(y_pred_train,training_set$font) %>% accuracy()
+cat("\n Test performance \n")
+table(y_pred_test,test_set$font) %>% accuracy()
+
+```
+
+1.2) Repeat the preceding operation for k = 5, 10 , 15, 20, 30, 40, 50 ,100; compute the associated
+percentages testperfK of correct classifications on TESTSET. Plot the curve testperfK versus K to try to
+identify a best range [a < K <b] of values for the integer K
+
+```{r}
+y_pred_list = c()
+k_list = c(5,10,15,20,30,40,50,100,200)
+set.seed(1)
+
+for (i in 1:length(k_list)){
+   y_pred = knn(train = training_set[,-1],
+                test = test_set[,-1],
+                cl = training_set$font,
+                k = k_list[i])
+   tab = table(y_pred,test_set$font)
+    y_pred_list[i] = accuracy(tab)
+    print(i)
+}
+plot(k_list, y_pred_list, xlab = 'k Value', ylab = 'Percentage
+of Accuracy',
+main = 'Curve for Accuracy of k', type = 'o')
+```
+
+
+1.3) Repeat the preceding exploration for a few more values of K within the range [a,b]. Conclude by
+selecting a "best" value kbest for the integer K
+```{r}
+y_pred_list_2 = list()
+k_list = seq(5,10)
+set.seed(1)
+
+for (i in k_list){
+   y_pred = knn(train = training_set[,-1],
+                test = test_set[,-1],
+                cl = training_set$font,
+                k =i)
+
+   tab = table(y_pred,test_set$font)
+    # y_pred_list_2[i] = accuracy(tab)
+   y_pred_list_2 = append(y_pred_list_2,accuracy(tab))
+    print(i)
+}
+plot(k_list, y_pred_list_2, xlab = 'k Value', ylab = 'Percentage
+of Accuracy',
+main = 'Curve for Accuracy of k', type = 'o')
+```
+
+1.4) Using the "best" K= kbest, compute and interpret the two 3x3 confusion matrices for KNN
+classification, namely the matrices testconf on the TESTSET and trainconf on the TRAINSET
+```{r}
+set.seed(10)
+y_pred_best = knn(train = training_set,
+                  test = test_set,
+                  cl = training_set$font,
+                  k=7)
+y_pred_trnbest = knn(train = training_set[,-1],
+              test = training_set[,-1],
+              cl = training_set$font,
+              k=7)
+mat2 = table(y_pred_best,test_set$font)
+tab2 = mat2/rowSums(mat2)
+mat3 = table(y_pred_trnbest,training_set$font)
+tab3 = mat3/rowSums(mat3)
+```
+```{r}
+# 1.5 90% confidence intervals
+tab2[1,1] + c(-1,1)*qnorm(0.95)*sqrt(tab2[1,1]*(1-tab2[1,1])/length(test_set))
+tab2[2,2] + c(-1,1)*qnorm(0.95)*sqrt(tab2[2,2]*(1-tab2[2,2])/length(test_set))
+tab2[3,3] + c(-1,1)*qnorm(0.95)*sqrt(tab2[3,3]*(1-tab2[3,3])/length(test_set))
+```
+
+1.6) consider the package PACK1 of 100 attributes with names rLcM where L = 0, 1, 2, ,9 and
+M= 0, 1, 2, ,9. These 100 features correspond to the 100 pixel intensities displayed in a specific 10x10
+window of our 20x20 pixels images . Call this set of features PACK1= { Z1, Z2, Z3, ... ,Z100 }. Their values are listed in 100 specific columns of TRAINSET and of TESTSET. Apply KNN classification with K=kbest but using ONLY the vector of 100 features { Z1, Z2, Z3, ... ,Z100 }
+```{r}
+subset_df = function(data = df,L=seq(0,9),M=seq(0,9)){
+            a = strsplit(gsub("([a-z]*)([0-9]*)([a-z]*)", "\\1 \\2 \\3", colnames(data)), " ")
+            index = list()
+            sequence1 = seq(length(colnames(data)))
+            for(i in sequence1){
+                if( (a[[i]][2] %in% L) & (a[[i]][4] %in% M) ){
+      
+                  index = c(index,paste(a[[i]],collapse = ''))
+    }
+  }
+
+            data[,c("font",unlist(index))]
+}
+#PACK1
+training_set_P1 = subset_df(data = training_set,L=seq(0,9),M=seq(0,9))
+test_set_P1 = subset_df(data = test_set,L=seq(0,9),M=seq(0,9))
+y_pred_P1 = knn(train = training_set_P1,
+              test = test_set_P1,
+              cl = training_set_P1$font,
+              k=7)
+w1 = table(y_pred,test_set_P1$font) %>% accuracy()
+w1
+```
+1.7) Repeat this operation for 3 other packages PACK2, PACK3, PACK4 of 100 features each ,
+corresponding respectively to
+```{r}
+#PACK2
+training_set_P2 = subset_df(data = training_set,L=seq(0,19),M=seq(10,19))
+test_set_P2 = subset_df(data = test_set,L=seq(0,19),M=seq(10,19))
+y_pred_P2 = knn(train = training_set_P2,
+              test = test_set_P2,
+              cl = training_set_P2$font,
+              k=7)
+w2 = table(y_pred_P2,test_set_P2$font) %>% accuracy()
+w2
+```
+```{r}
+#PACK3
+training_set_P3 = subset_df(data = training_set,L=seq(10,19),M=seq(10,19))
+test_set_P3 = subset_df(data = test_set,L=seq(10,19),M=seq(10,19))
+y_pred_P3 = knn(train = training_set_P3,
+              test = test_set_P3,
+              cl = training_set_P3$font,
+              k=7)
+w3 = table(y_pred_P3,test_set_P3$font) %>% accuracy()
+w3
+```
+
+```{r}
+#PACK4
+training_set_P4 = subset_df(data = training_set,L=seq(10,19),M=seq(0,9))
+test_set_P4 = subset_df(data = test_set,L=seq(10,19),M=seq(0,9))
+y_pred_P4 = knn(train = training_set_P4,
+              test = test_set_P4,
+              cl = training_set_P4$font,
+              k=7)
+w4 = table(y_pred_P4,test_set_P4$font) %>% accuracy()
+w4
+```
+```{r}
+W1 = w1/sum(w1+w2+w3+w4)
+W2 = w2/sum(w1+w2+w3+w4)
+W3 = w3/sum(w1+w2+w3+w4)
+W4 = w4/sum(w1+w2+w3+w4)
+
+cat("W1 :",W1," W2:", W2," W3:", W3," W4:", W4)
+```
+1.8) Assign weights to each feature , namely the weight w1 to each feature in PACK1 , the weight w1 to
+each feature in PACK1 , the weight w2 to each feature in PACK2 , the weight w3 to each feature in
+PACK3 , the weight w4 to each feature in PACK4 . Renormalize these 400 weights so that their total sum
+becomes 1
+
+```{r message=FALSE}
+subset_df(data = training_set,L=seq(0,19),M=seq(0,19))%>%  head()
+
+training_set_final = subset_df(data = training_set,L=seq(0,19),M=seq(0,19)) %>% 
+                      mutate_at(vars(r0c0:r9c9),.funs = funs(.*W1)) %>% 
+                      mutate_at(vars(r0c10:r9c19),.funs = funs(.*W2)) %>% 
+                      mutate_at(vars(r10c19:r10c19),.funs = funs(.*W3)) %>% 
+                      mutate_at(vars(r10c0:r19c9),.funs = funs(.*W4)) 
+
+test_set_final = subset_df(data = test_set,L=seq(0,19),M=seq(0,19)) %>% 
+                      mutate_at(vars(r0c0:r9c9),.funs = funs(.*W1)) %>% 
+                      mutate_at(vars(r0c10:r9c19),.funs = funs(.*W2)) %>% 
+                      mutate_at(vars(r10c19:r10c19),.funs = funs(.*W3)) %>% 
+                      mutate_at(vars(r10c0:r19c9),.funs = funs(.*W4)) 
+y_pred_final = knn(train = training_set_final,
+                test = test_set_final,
+                cl = training_set_final$font,
+                k=7)
+
+
+# confusion matrix for test_set
+mat_fin = table(y_pred_final,test_set_final$font)
+tab_fin = mat_fin/rowSums(mat_fin)
+
+table(y_pred_final,test_set_final$font) %>% accuracy()
+
+```
+
