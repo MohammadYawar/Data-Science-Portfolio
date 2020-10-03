@@ -1,6 +1,6 @@
 # Data-Science-Portfolio
 
-## Stock-Predictor
+## [Stock-Predictor](https://github.com/MohammadYawar/Stock-Predictor/blob/main/Stock%20Predictor.pdf)
 
 The dataset used consists of 50 major companies daily stock prices downloaded from Yahoo Finance from a period of 2/8/2013 to 2/7/2018.
 The closing stock prices of these companies for days in which the stock market was open were used for the analysis.
@@ -36,6 +36,11 @@ The dataset is highly unbalanced, the positive class (frauds) account for 0.172%
 In this kernel for dealing with the imbalanced data set we use the oversampling approach and use SMOT.
 SMOTE (synthetic minority oversampling technique) is one of the most commonly used oversampling methods to solve the imbalance problem. It aims to balance class distribution by randomly increasing minority class examples by replicating them. 
 We use grid search to fit and find the best parameters for the logistic regression model to see how accurate they are in detecting whether a transaction is a normal payment or a fraud. 
+
+
+## Analyzing-Biochemical-Properties-to-Grade-Wine-Quality
+
+Wine  Once viewed as a luxury good, it is increasingly enjoyed by a wider range of consumers. Quality evaluation is often considered in the certification process, and it can also be used to improve wine making. This is done by identifying the most influential factors. Having quality standards also helps price setting. Consequently, the goal of this project is to find out critical variables that model the quality of wine.
 
 
 
