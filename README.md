@@ -13,18 +13,18 @@ Selecting a value of h that is small could also lead to a weak architecture and 
 to have a value that is stable for both the training and test set. The PCA analysis was performed on the input data to estimate the value of h that will be
 used to design the architecture of the MLP.  
 
-## Font-Predictor
+## [Font-Predictor](https://github.com/MohammadYawar/Font-Predictor/blob/main/WeightedKNN.pdf)
 The task is to calssify different fonts. The data was cleaned and then KNN was applied for classification  for different values of the hyperparameter. 
 In order to improve the accuracy tweighted KNN was used with the best value of hyperparameter obtained from previous best model. The new solution improved accuracy from ~78% to ~90%  
 
-## HandMovementClassifier
+## [HandMovementClassifier](https://github.com/MohammadYawar/HandMovementClassifier/blob/main/HandMovementClassifier.pdf)
 A Vicon motion capture camera system was used to record users performing 3 hand postures with markers attached to a left-handed glove. 
 Markers with a rigid pattern on the glove was used to establish a local co-ordinate system. 
 The goal of the classification task is to correctly predict the hand movements.
 We used PCA for determining dimensions of the hidden layer and  trained a Multi Layer Perceptron using Tensorflow in Python 
 for classifying hand movements.   
 
-## Credit-Card-Fraud-Detection
+## [Credit-Card-Fraud-Detection](https://github.com/MohammadYawar/Credit-Card-Fraud-Detection/blob/main/Credit%20Card%20Fraud%20Detection.ipynb)
 
 ### Dataset
 
@@ -38,7 +38,7 @@ SMOTE (synthetic minority oversampling technique) is one of the most commonly us
 We use grid search to fit and find the best parameters for the logistic regression model to see how accurate they are in detecting whether a transaction is a normal payment or a fraud. 
 
 
-## Analyzing-Biochemical-Properties-to-Grade-Wine-Quality
+## [Analyzing-Biochemical-Properties-to-Grade-Wine-Quality](https://github.com/MohammadYawar/Analyzing-Biochemical-Properties-to-Grade-Wine-Quality/blob/main/Analyzing%20Biochemical%20Properties%20to%20Grade%20Wine%20Quality.pdf)
 
 Wine  Once viewed as a luxury good, it is increasingly enjoyed by a wider range of consumers. Quality evaluation is often considered in the certification process, and it can also be used to improve wine making. This is done by identifying the most influential factors. Having quality standards also helps price setting. Consequently, the goal of this project is to find out critical variables that model the quality of wine.
 
